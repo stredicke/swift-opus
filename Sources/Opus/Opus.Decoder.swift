@@ -71,7 +71,16 @@ public extension Opus.Decoder {
 	
 	func decode(sampleCount: Int) throws -> AVAudioPCMBuffer {
 		let output = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(sampleCount))!
-		try decode(sampleCount: sampleCount, to: output)
+		switch format.commonFormat {
+		case .pcmFormatInt16:
+			let output = UnsafeMutableBufferPointer(start: output.int16ChannelData![0], count: Int(output.frameCapacity))
+			try decode(sampleCount: sampleCount, to: output)
+		case .pcmFormatFloat32:
+			let output = UnsafeMutableBufferPointer(start: output.floatChannelData![0], count: Int(output.frameCapacity))
+			try decode(sampleCount: sampleCount, to: output)
+		default:
+			throw Opus.Error.badArgument
+		}
 		return output
 	}
 }
