@@ -68,6 +68,12 @@ public extension Opus.Decoder {
 		}
 		output.frameLength = AVAudioFrameCount(decodedCount)
 	}
+	
+	func decode(sampleCount: Int) throws -> AVAudioPCMBuffer {
+		let output = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(sampleCount))!
+		try decode(sampleCount, to: output)
+		return output
+	}
 }
 
 // MARK: Private decode methods
@@ -93,6 +99,36 @@ extension Opus.Decoder {
 			decoder,
 			input.baseAddress!,
 			Int32(input.count),
+			output.baseAddress!,
+			Int32(output.count),
+			0
+		)
+		if decodedCount < 0 {
+			throw Opus.Error(decodedCount)
+		}
+		return Int(decodedCount)
+	}
+	
+	private func decode(sampleCount: Int, to output: UnsafeMutableBufferPointer<Int16>) throws -> Int {
+		let decodedCount = opus_decode(
+			decoder,
+			nil,
+			sampleCount,
+			output.baseAddress!,
+			Int32(output.count),
+			0
+		)
+		if decodedCount < 0 {
+			throw Opus.Error(decodedCount)
+		}
+		return Int(decodedCount)
+	}
+
+	private func decode(sampleCount: Int, to output: UnsafeMutableBufferPointer<Float32>) throws -> Int {
+		let decodedCount = opus_decode_float(
+			decoder,
+			nil,
+			sampleCount,
 			output.baseAddress!,
 			Int32(output.count),
 			0
